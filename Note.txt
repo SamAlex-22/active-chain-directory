@@ -1,0 +1,51 @@
+# Active Chain Directory (ACD) - Setup Guide
+
+Welcome to the Active Chain Directory! This repository contains the foundational smart contracts for our decentralized identity, access control, and digital asset management platform (our "Blockchain Project").
+
+Follow these instructions to set up your local development environment and run the project.
+
+## 🛠 Prerequisites
+Before you begin, ensure you have the following installed on your machine:
+* **Node.js** (v18 or higher recommended)
+* **npm** (comes with Node.js)
+* **MetaMask** browser extension (for testing the frontend later)
+* A code editor like **VS Code**
+
+## 🚀 Installation & Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone <YOUR-GITHUB-REPO-URL>
+   cd active-chain-directory
+
+
+1.Install core dependencies:
+	This project uses Hardhat (v3) configured with TypeScript and ESM. Run the following command to install all required packages:
+
+npm install
+
+2.Install security contracts:
+	We use OpenZeppelin for secure, audited smart contract standards (like RBAC). Install it by running:
+
+npm install @openzeppelin/contracts
+
+
+🏗 Compiling the Smart Contracts
+To verify that everything is installed correctly and to compile the DirectoryRoleManager.sol contract, run:
+
+
+npx hardhat compile
+
+
+
+If successful, you will see a message saying the compilation was successful.
+🌐 Running a Local Blockchain Node
+For local testing without spending real gas fees, Hardhat provides a built-in local blockchain.
+
+1.Open a terminal and start the node:
+
+npx hardhat node
+
+
+2.Hardhat will generate a list of test accounts loaded with fake ETH.
+3.You can import these accounts into your MetaMask wallet using the provided private keys. (Warning: Never use these test private keys on the Ethereum mainnet!)
