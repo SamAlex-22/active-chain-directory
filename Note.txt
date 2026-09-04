@@ -1,51 +1,136 @@
-# Active Chain Directory (ACD) - Setup Guide
+# Active Chain Directory (ACD) - Full Project Setup Guide
 
-Welcome to the Active Chain Directory! This repository contains the foundational smart contracts for our decentralized identity, access control, and digital asset management platform (our "Blockchain Project").
+Welcome to the Active Chain Directory! This repository contains the complete stack for our decentralized identity, access control, AI Risk Engine, and digital asset management platform.
 
-Follow these instructions to set up your local development environment and run the project.
+The project is divided into four main layers:
+1. **Smart Contracts** (Hardhat, Solidity, Ethers v6)
+2. **Web3 Frontend** (React, Vite, Tailwind CSS)
+3. **SIEM Event Indexer** (Node.js, Express, SQLite)
+4. **AI Risk Engine** (Python, FastAPI, Random Forest)
+
+Follow these instructions to set up your local development environment and run the complete project stack.
+
+---
 
 ## 🛠 Prerequisites
 Before you begin, ensure you have the following installed on your machine:
 * **Node.js** (v18 or higher recommended)
 * **npm** (comes with Node.js)
-* **MetaMask** browser extension (for testing the frontend later)
+* **Python** (v3.8 or higher)
+* **MetaMask** browser extension
 * A code editor like **VS Code**
 
-## 🚀 Installation & Setup
+---
+
+## 🚀 1. Cloning & Smart Contract Setup
 
 1. **Clone the repository:**
    ```bash
    git clone <YOUR-GITHUB-REPO-URL>
    cd active-chain-directory
+   ```
 
+2. **Install root dependencies (Hardhat & OpenZeppelin):**
+   ```bash
+   npm install
+   npm install @openzeppelin/contracts
+   ```
 
-1.Install core dependencies:
-	This project uses Hardhat (v3) configured with TypeScript and ESM. Run the following command to install all required packages:
+3. **Start the Local Blockchain:**
+   Open a new terminal window, navigate to the root directory, and start the local node:
+   ```bash
+   npx hardhat node
+   ```
+   *(Keep this terminal running. It generates test accounts loaded with fake ETH that you can import into MetaMask).*
 
-npm install
+4. **Deploy the Smart Contracts:**
+   Open a second terminal window, navigate to the root directory, and run the deployment script:
+   ```bash
+   npx hardhat run scripts/deploy.ts --network localhost
+   ```
+   *(This deploys RoleManager, IdentityRegistry, AuditRegistry, and AssetNFT to your local node and exports their ABIs into the frontend folder).*
 
-2.Install security contracts:
-	We use OpenZeppelin for secure, audited smart contract standards (like RBAC). Install it by running:
+---
 
-npm install @openzeppelin/contracts
+## 🖥 2. Frontend Setup (React/Vite)
 
+The frontend is a Web3-enabled React application that interacts with the smart contracts and the AI Engine.
 
-🏗 Compiling the Smart Contracts
-To verify that everything is installed correctly and to compile the DirectoryRoleManager.sol contract, run:
+1. **Navigate and Install:**
+   In a new terminal window:
+   ```bash
+   cd frontend
+   npm install
+   ```
 
+2. **Run the Development Server:**
+   ```bash
+   npm run dev
+   ```
+   *(The frontend will be available at `http://localhost:5174`)*
 
-npx hardhat compile
+---
 
+## 🗄 3. SIEM Event Indexer Setup (Node.js)
 
+The backend indexer listens to the Hardhat node in real-time and stores `AuditRegistry` events into a local SQLite database for the Audit Dashboard.
 
-If successful, you will see a message saying the compilation was successful.
-🌐 Running a Local Blockchain Node
-For local testing without spending real gas fees, Hardhat provides a built-in local blockchain.
+1. **Navigate and Install:**
+   In a new terminal window:
+   ```bash
+   cd backend
+   npm install
+   ```
 
-1.Open a terminal and start the node:
+2. **Start the Indexer:**
+   ```bash
+   node src/server.js
+   ```
+   *(The backend API will run at `http://localhost:3001`)*
 
-npx hardhat node
+---
 
+## 🧠 4. AI Risk Engine Setup (Python)
 
-2.Hardhat will generate a list of test accounts loaded with fake ETH.
-3.You can import these accounts into your MetaMask wallet using the provided private keys. (Warning: Never use these test private keys on the Ethereum mainnet!)
+The Python microservice trains a Random Forest model on ABAC (Attribute-Based Access Control) synthetic data and provides a REST API to evaluate transaction risk in real-time.
+
+1. **Navigate and Create Virtual Environment:**
+   In a new terminal window:
+   ```bash
+   cd ai-engine
+   python -m venv venv
+   ```
+
+2. **Activate the Virtual Environment:**
+   * On Mac/Linux: `source venv/bin/activate`
+   * On Windows: `venv\Scripts\activate`
+
+3. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Train the Model:**
+   Generate the synthetic dataset and train the `RandomForestRegressor` (creates `risk_model.pkl`):
+   ```bash
+   python train_model.py
+   ```
+
+5. **Start the FastAPI Server:**
+   ```bash
+   uvicorn risk_api:app --reload --port 8000
+   ```
+   *(The AI API will run at `http://localhost:8000`. You can view the Swagger UI at `http://localhost:8000/docs`)*
+
+---
+
+## 🧪 Testing the Complete Flow
+
+1. Open your browser to **`http://localhost:5174`**.
+2. Connect using the **"Connect to Local Hardhat Node"** button (Logs you in as ADMIN).
+3. Use the **Admin Directory** to register a new user and assign them a role.
+4. Use **Asset Management** to mint an NFT.
+5. Watch the **Node.js Indexer** terminal log the event into SQLite.
+6. Open the **Audit Dashboard** in the UI to view the immutable ledger of events.
+7. Attempt an **AI-Protected Transfer**. Watch the button spin, the **FastAPI Python Server** process the request, and return a Risk Decision (ALLOW, REQUIRE_APPROVAL, or BLOCK).
+8. If the AI flags it as High Risk, scroll to the **Approval Center** to manually override the block as the Admin!

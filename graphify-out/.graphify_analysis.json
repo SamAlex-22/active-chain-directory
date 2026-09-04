@@ -1,0 +1,193 @@
+{
+  "communities": {
+    "0": [
+      "ref_es2023",
+      "ref_mocha",
+      "ref_node",
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_outdir",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_types",
+      "tsconfig_compileroptions_verbatimmodulesyntax"
+    ],
+    "1": [
+      "package",
+      "package_author",
+      "package_description",
+      "package_keywords",
+      "package_license",
+      "package_main",
+      "package_name",
+      "package_scripts",
+      "package_scripts_test",
+      "package_type",
+      "package_version"
+    ],
+    "2": [
+      "chai",
+      "package_devdependencies",
+      "package_devdependencies_chai"
+    ],
+    "3": [
+      "openzeppelin_contracts",
+      "package_dependencies",
+      "package_dependencies_openzeppelin_contracts"
+    ],
+    "4": [
+      "ethers",
+      "package_devdependencies_ethers"
+    ],
+    "5": [
+      "forge_std",
+      "package_devdependencies_forge_std"
+    ],
+    "6": [
+      "hardhat",
+      "package_devdependencies_hardhat"
+    ],
+    "7": [
+      "mocha",
+      "package_devdependencies_mocha"
+    ],
+    "8": [
+      "nomicfoundation_hardhat_ethers",
+      "package_devdependencies_nomicfoundation_hardhat_ethers"
+    ],
+    "9": [
+      "nomicfoundation_hardhat_ignition",
+      "package_devdependencies_nomicfoundation_hardhat_ignition"
+    ],
+    "10": [
+      "nomicfoundation_hardhat_toolbox_mocha_ethers",
+      "package_devdependencies_nomicfoundation_hardhat_toolbox_mocha_ethers"
+    ],
+    "11": [
+      "package_devdependencies_types_chai",
+      "types_chai"
+    ],
+    "12": [
+      "package_devdependencies_types_chai_as_promised",
+      "types_chai_as_promised"
+    ],
+    "13": [
+      "package_devdependencies_types_mocha",
+      "types_mocha"
+    ],
+    "14": [
+      "package_devdependencies_types_node",
+      "types_node"
+    ],
+    "15": [
+      "package_devdependencies_typescript",
+      "typescript"
+    ],
+    "16": [
+      "hardhat_config"
+    ],
+    "17": [
+      "ignition_modules_counter"
+    ],
+    "18": [
+      "scripts_send_op_tx"
+    ],
+    "19": [
+      "test_counter"
+    ]
+  },
+  "cohesion": {
+    "0": 0.16666666666666666,
+    "1": 0.18181818181818182,
+    "2": 0.6666666666666666,
+    "3": 0.6666666666666666,
+    "4": 1.0,
+    "5": 1.0,
+    "6": 1.0,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0
+  },
+  "gods": [
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 8
+    },
+    {
+      "id": "tsconfig_compileroptions_types",
+      "label": "types",
+      "degree": 3
+    },
+    {
+      "id": "tsconfig_compileroptions_lib",
+      "label": "lib",
+      "degree": 2
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_nomicfoundation_hardhat_toolbox_mocha_ethers",
+      "label": "@nomicfoundation/hardhat-toolbox-mocha-ethers",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_types_chai",
+      "label": "@types/chai",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_types_chai_as_promised",
+      "label": "@types/chai-as-promised",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_types_mocha",
+      "label": "@types/mocha",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_types_node",
+      "label": "@types/node",
+      "degree": 2
+    },
+    {
+      "id": "package_devdependencies_typescript",
+      "label": "typescript",
+      "degree": 2
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`, `ethers`, `forge-std`, `hardhat`, `mocha`, `@nomicfoundation/hardhat-ethers`, `@nomicfoundation/hardhat-ignition`, `@nomicfoundation/hardhat-toolbox-mocha-ethers`, `@types/chai`, `@types/chai-as-promised`, `@types/mocha`, `@types/node`, `typescript`?",
+      "why": "High betweenness centrality (0.439) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.049) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `module`, `outDir`, `skipLibCheck` to the rest of the system?",
+      "why": "31 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}

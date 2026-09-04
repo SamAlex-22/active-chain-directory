@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:node": "npx hardhat node",
+    "start:deploy": "wait-on tcp:127.0.0.1:8545 && npx hardhat run scripts/deploy.ts --network localhost",
+    "start:backend": "wait-on tcp:127.0.0.1:8545 && cd backend && node src/server.js",
+    "start:ai": "cd ai-engine && source venv/bin/activate && uvicorn risk_api:app --port 8000",
+    "start:frontend": "wait-on tcp:127.0.0.1:8545 && cd frontend && npm run dev",
+    "start:all": "concurrently -k -p \"[{name}]\" -n \"Node,Deploy,Backend,AI,React\" -c \"cyan,green,yellow,magenta,blue\" \"npm run start:node\" \"npm run start:deploy\" \"npm run start:backend\" \"npm run start:ai\" \"npm run start:frontend\""
   },
   "keywords": [],
   "author": "",
@@ -19,11 +25,13 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.20.1",
     "chai": "^6.2.2",
+    "concurrently": "^10.0.5",
     "ethers": "^6.17.0",
     "forge-std": "github:foundry-rs/forge-std#v1.16.2",
     "hardhat": "^3.15.0",
     "mocha": "^11.8.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "wait-on": "^9.1.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1"
