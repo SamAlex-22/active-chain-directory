@@ -74,7 +74,7 @@ export default function Navbar() {
           {!account ? (
             <div className="flex items-center gap-2">
               <button
-                onClick={connectLocal}
+                onClick={() => connectLocal(0)}
                 className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 hover:brightness-110 active:scale-95"
               >
                 Connect Local Node

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { BrowserProvider, JsonRpcProvider, JsonRpcSigner, Contract } from "ethers";
 
 import contractConfig from "../contracts/contract-config.json";
@@ -8,7 +8,23 @@ import AuditRegistryABI from "../contracts/AuditRegistry.json";
 import AssetNFTABI from "../contracts/AssetNFT.json";
 
 // ── Types ──────────────────────────────────────────────────────────
-type Role = "ADMIN" | "MANAGER" | "AUDITOR" | "USER" | "NONE";
+export type Role = "ADMIN" | "MANAGER" | "AUDITOR" | "USER" | "NONE";
+
+export interface DemoPersona {
+  index: number;
+  label: string;
+  name: string;
+  expectedRole: Role;
+  icon: string;
+  description: string;
+}
+
+export const DEMO_PERSONAS: DemoPersona[] = [
+  { index: 0, label: "Admin", name: "Domain Administrator", expectedRole: "ADMIN", icon: "👑", description: "Full directory governance, asset oversight, approval rights" },
+  { index: 1, label: "Asset Manager", name: "Asset Operations Lead", expectedRole: "MANAGER", icon: "👔", description: "Mint digital twins, evaluate & initiate transfers" },
+  { index: 2, label: "Chief Auditor", name: "SIEM Security Auditor", expectedRole: "AUDITOR", icon: "🔍", description: "Continuous compliance & immutable audit ledger access" },
+  { index: 3, label: "Standard Employee", name: "General Personnel", expectedRole: "USER", icon: "👤", description: "DID identity verification & personal asset inspection" },
+];
 
 interface Web3State {
   account: string | null;
@@ -18,12 +34,14 @@ interface Web3State {
   isCorrectNetwork: boolean;
   currentRole: Role;
   connectionMode: "metamask" | "local" | null;
+  activePersonaIndex: number;
   roleManager: Contract | null;
   identityRegistry: Contract | null;
   auditRegistry: Contract | null;
   assetNFT: Contract | null;
   connectWallet: () => Promise<void>;
-  connectLocal: () => Promise<void>;
+  connectLocal: (accountIndex?: number) => Promise<void>;
+  switchPersona: (index: number) => Promise<void>;
   switchNetwork: () => Promise<void>;
   refreshRole: () => Promise<void>;
 }
@@ -58,6 +76,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
   const [chainId, setChainId] = useState<number | null>(null);
   const [currentRole, setCurrentRole] = useState<Role>("NONE");
   const [connectionMode, setConnectionMode] = useState<"metamask" | "local" | null>(null);
+  const [activePersonaIndex, setActivePersonaIndex] = useState<number>(0);
 
   const [roleManager, setRoleManager] = useState<Contract | null>(null);
   const [identityRegistry, setIdentityRegistry] = useState<Contract | null>(null);
@@ -66,43 +85,50 @@ export function Web3Provider({ children }: { children: ReactNode }) {
 
   const isCorrectNetwork = chainId === HARDHAT_CHAIN_ID;
 
+  // ── evaluateRole: queries contract directly ───────────────────────
+  const evaluateRole = useCallback(async (rm: Contract, targetAccount: string): Promise<Role> => {
+    try {
+      const adminRole = await rm.ADMIN_ROLE();
+      const managerRole = await rm.MANAGER_ROLE();
+      const auditorRole = await rm.AUDITOR_ROLE();
+      const userRole = await rm.USER_ROLE();
+
+      if (await rm.hasRole(adminRole, targetAccount)) {
+        return "ADMIN";
+      }
+      if (await rm.hasRole(managerRole, targetAccount)) {
+        return "MANAGER";
+      }
+      if (await rm.hasRole(auditorRole, targetAccount)) {
+        return "AUDITOR";
+      }
+      if (await rm.hasRole(userRole, targetAccount)) {
+        return "USER";
+      }
+      return "NONE";
+    } catch {
+      return "NONE";
+    }
+  }, []);
+
   // ── refreshRole ──────────────────────────────────────────────────
   const refreshRole = useCallback(async () => {
     if (!roleManager || !account) {
       setCurrentRole("NONE");
       return;
     }
-    try {
-      const adminRole = await roleManager.ADMIN_ROLE();
-      const managerRole = await roleManager.MANAGER_ROLE();
-      const auditorRole = await roleManager.AUDITOR_ROLE();
-      const userRole = await roleManager.USER_ROLE();
-
-      if (await roleManager.hasRole(adminRole, account)) {
-        setCurrentRole("ADMIN");
-      } else if (await roleManager.hasRole(managerRole, account)) {
-        setCurrentRole("MANAGER");
-      } else if (await roleManager.hasRole(auditorRole, account)) {
-        setCurrentRole("AUDITOR");
-      } else if (await roleManager.hasRole(userRole, account)) {
-        setCurrentRole("USER");
-      } else {
-        setCurrentRole("NONE");
-      }
-    } catch {
-      setCurrentRole("NONE");
-    }
-  }, [roleManager, account]);
+    const detected = await evaluateRole(roleManager, account);
+    setCurrentRole(detected);
+  }, [roleManager, account, evaluateRole]);
 
   // ── connectLocal (direct JSON-RPC to Hardhat node) ───────────────
-  const connectLocal = useCallback(async () => {
+  const connectLocal = useCallback(async (accountIndex: number = 0) => {
     try {
       const jsonRpcProvider = new JsonRpcProvider(LOCAL_RPC_URL);
       const network = await jsonRpcProvider.getNetwork();
       const localChainId = Number(network.chainId);
 
-      // Get Account #0 (the deployer/admin)
-      const localSigner = await jsonRpcProvider.getSigner(0);
+      const localSigner = await jsonRpcProvider.getSigner(accountIndex);
       const walletAddress = await localSigner.getAddress();
 
       setProvider(jsonRpcProvider);
@@ -110,23 +136,54 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       setAccount(walletAddress);
       setChainId(localChainId);
       setConnectionMode("local");
+      setActivePersonaIndex(accountIndex);
 
       const contracts = bindContracts(localSigner);
       setRoleManager(contracts.roleManager);
       setIdentityRegistry(contracts.identityRegistry);
       setAuditRegistry(contracts.auditRegistry);
       setAssetNFT(contracts.assetNFT);
+
+      // If connecting as Admin (index 0), seed demo roles for local testing if needed
+      if (accountIndex === 0) {
+        try {
+          const signer1 = await jsonRpcProvider.getSigner(1);
+          const addr1 = await signer1.getAddress();
+          const managerRole = await contracts.roleManager.MANAGER_ROLE();
+          const hasMgr = await contracts.roleManager.hasRole(managerRole, addr1);
+          if (!hasMgr) {
+            const signer2 = await jsonRpcProvider.getSigner(2);
+            const addr2 = await signer2.getAddress();
+            const signer3 = await jsonRpcProvider.getSigner(3);
+            const addr3 = await signer3.getAddress();
+            const auditorRole = await contracts.roleManager.AUDITOR_ROLE();
+            const userRole = await contracts.roleManager.USER_ROLE();
+            await (await contracts.roleManager.grantRole(managerRole, addr1)).wait();
+            await (await contracts.roleManager.grantRole(auditorRole, addr2)).wait();
+            await (await contracts.roleManager.grantRole(userRole, addr3)).wait();
+          }
+        } catch {
+          // ignore seeding errors if node is not running or accounts don't exist
+        }
+      }
+
+      const role = await evaluateRole(contracts.roleManager, walletAddress);
+      setCurrentRole(role);
     } catch (err) {
       console.error("Failed to connect to local Hardhat node:", err);
       alert("Could not connect to Hardhat node at " + LOCAL_RPC_URL + ". Is it running?");
     }
-  }, []);
+  }, [evaluateRole]);
+
+  // ── switchPersona: 1-click persona switch in local mode ───────────
+  const switchPersona = useCallback(async (index: number) => {
+    await connectLocal(index);
+  }, [connectLocal]);
 
   // ── connectWallet (MetaMask) ─────────────────────────────────────
   const connectWallet = useCallback(async () => {
     if (typeof window.ethereum === "undefined") {
-      // Fall back to local node if MetaMask isn't available
-      await connectLocal();
+      await connectLocal(0);
       return;
     }
 
@@ -149,7 +206,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     setIdentityRegistry(contracts.identityRegistry);
     setAuditRegistry(contracts.auditRegistry);
     setAssetNFT(contracts.assetNFT);
-  }, [connectLocal]);
+
+    const role = await evaluateRole(contracts.roleManager, walletAddress);
+    setCurrentRole(role);
+  }, [connectLocal, evaluateRole]);
 
   // ── switchNetwork ────────────────────────────────────────────────
   const switchNetwork = useCallback(async () => {
@@ -184,7 +244,7 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     }
   }, [roleManager, account, isCorrectNetwork, refreshRole]);
 
-  // ── MetaMask event listeners (only when using MetaMask) ──────────
+  // ── MetaMask event listeners ─────────────────────────────────────
   useEffect(() => {
     if (!window.ethereum || connectionMode !== "metamask") return;
 
@@ -211,7 +271,6 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     };
   }, [connectWallet, connectionMode]);
 
-  // ── Provide ──────────────────────────────────────────────────────
   return (
     <Web3Context.Provider
       value={{
@@ -222,12 +281,14 @@ export function Web3Provider({ children }: { children: ReactNode }) {
         isCorrectNetwork,
         currentRole,
         connectionMode,
+        activePersonaIndex,
         roleManager,
         identityRegistry,
         auditRegistry,
         assetNFT,
         connectWallet,
         connectLocal,
+        switchPersona,
         switchNetwork,
         refreshRole,
       }}

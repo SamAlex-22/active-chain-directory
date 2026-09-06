@@ -5,7 +5,7 @@ const { ethers, networkHelpers } = await network.create();
 
 describe("AssetNFT and AuditRegistry Integration", function () {
   async function deployFixture() {
-    const [admin, manager, user1, user2] = await ethers.getSigners();
+    const [admin, manager, user1, user2, aiValidator] = await ethers.getSigners();
 
     const roleManager = await ethers.deployContract("RoleManager");
     const roleManagerAddress = await roleManager.getAddress();
@@ -15,14 +15,15 @@ describe("AssetNFT and AuditRegistry Integration", function () {
 
     const assetNFT = await ethers.deployContract("AssetNFT", [
       roleManagerAddress,
-      auditRegistryAddress
+      auditRegistryAddress,
+      aiValidator.address
     ]);
 
     // Admin grants MANAGER_ROLE to the manager account
     const MANAGER_ROLE = await roleManager.MANAGER_ROLE();
     await roleManager.connect(admin).grantRole(MANAGER_ROLE, manager.address);
 
-    return { roleManager, auditRegistry, assetNFT, admin, manager, user1, user2 };
+    return { roleManager, auditRegistry, assetNFT, admin, manager, user1, user2, aiValidator };
   }
 
   describe("Minting", function () {
@@ -52,17 +53,17 @@ describe("AssetNFT and AuditRegistry Integration", function () {
   });
 
   describe("Transfer & Audit Logging", function () {
-    it("should log ASSET_TRANSFERRED when user1 transfers their asset to user2", async function () {
-      const { assetNFT, auditRegistry, manager, user1, user2 } = await networkHelpers.loadFixture(deployFixture);
+    it("should log ASSET_TRANSFERRED when admin transfers an asset to user2", async function () {
+      const { assetNFT, auditRegistry, manager, admin, user2 } = await networkHelpers.loadFixture(deployFixture);
       
-      await assetNFT.connect(manager).mintAsset(user1.address, "uri", "tag");
+      await assetNFT.connect(manager).mintAsset(admin.address, "uri", "tag");
       const expectedTokenId = 1n;
 
-      const tx = await assetNFT.connect(user1).transferFrom(user1.address, user2.address, expectedTokenId);
+      const tx = await assetNFT.connect(admin).transferFrom(admin.address, user2.address, expectedTokenId);
       
       await expect(tx)
         .to.emit(auditRegistry, "SystemLog")
-        .withArgs("ASSET_TRANSFERRED", user1.address, expectedTokenId, "", (t: any) => true);
+        .withArgs("ASSET_TRANSFERRED", admin.address, expectedTokenId, "", (t: any) => true);
     });
   });
 

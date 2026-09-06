@@ -29,13 +29,29 @@ async function main() {
   console.log(`AuditRegistry deployed to: ${auditRegistryAddress}`);
 
   // 5. Deploy AssetNFT
+  const allSigners = await ethers.getSigners();
+  const aiValidatorAddress = allSigners.length > 4 ? allSigners[4].address : deployer.address;
+  console.log(`AI Validator set to: ${aiValidatorAddress}`);
+
   const assetNFT = await ethers.deployContract("AssetNFT", [
     roleManagerAddress,
-    auditRegistryAddress
+    auditRegistryAddress,
+    aiValidatorAddress
   ]);
   await assetNFT.waitForDeployment();
   const assetNFTAddress = await assetNFT.getAddress();
   console.log(`AssetNFT deployed to: ${assetNFTAddress}`);
+
+  // 5.1 Assign demo persona roles if multiple local signers exist
+  if (allSigners.length >= 4) {
+    const managerRole = await roleManager.MANAGER_ROLE();
+    const auditorRole = await roleManager.AUDITOR_ROLE();
+    const userRole = await roleManager.USER_ROLE();
+    await (await roleManager.grantRole(managerRole, allSigners[1].address)).wait();
+    await (await roleManager.grantRole(auditorRole, allSigners[2].address)).wait();
+    await (await roleManager.grantRole(userRole, allSigners[3].address)).wait();
+    console.log(`Demo roles pre-assigned: Acc #1 (Manager), Acc #2 (Auditor), Acc #3 (User)`);
+  }
 
   // 6. Frontend Export
   // Resolve the path relative to the hardhat project root (process.cwd())
